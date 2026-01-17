@@ -27,6 +27,23 @@ def catalog(m):
         kb.add(telebot.types.InlineKeyboardButton(n,callback_data=f"c_{i}"))
     bot.send_message(m.chat.id,"Kategoriya:",reply_markup=kb)
 
+@bot.callback_query_handler(func=lambda call: call.data.startswith("cat_"))
+def open_category(call):
+    cid = call.data.split("_")[1]
+
+    cursor.execute("SELECT name, price, qty FROM products WHERE category_id=?", (cid,))
+    items = cursor.fetchall()
+
+    if not items:
+        bot.answer_callback_query(call.id, "Bu kategoriyada mahsulot yo‘q 😕")
+        return
+
+    text = "📦 <b>Mahsulotlar:</b>\n\n"
+    for name, price, qty in items:
+        text += f"🔹 {name}\n💰 {price} so‘m\n📦 {qty} dona\n\n"
+
+    bot.send_message(call.message.chat.id, text, parse_mode="HTML")
+
 @bot.callback_query_handler(func=lambda c:c.data.startswith("c_"))
 def prod(c):
     cid=c.data.split("_")[1]
